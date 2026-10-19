@@ -1,0 +1,72 @@
+#include <stdio.h>
+#include <limits.h>
+#include <string.h>
+
+#define MAXN 15
+#define INF 1000000000
+
+int n;
+int cost[MAXN][MAXN];
+int dp[1 << MAXN][MAXN];
+
+int min(int a, int b) {
+    return a < b ? a : b;
+}
+
+int tsp() {
+    int N = 1 << n;
+    for (int i = 0; i < N; i++)
+        for (int j = 0; j < n; j++)
+            dp[i][j] = INF;
+
+    // start from city 0
+    dp[1][0] = 0;
+
+    for (int mask = 1; mask < N; mask++) {
+        for (int u = 0; u < n; u++) {
+            if (!(mask & (1 << u))) continue;
+            if (dp[mask][u] == INF) continue;
+
+            for (int v = 0; v < n; v++) {
+                if (mask & (1 << v)) continue;          // already visited
+                if (cost[u][v] == INF) continue;        // no edge
+                int newMask = mask | (1 << v);
+                dp[newMask][v] = min(dp[newMask][v],
+                                     dp[mask][u] + cost[u][v]);
+            }
+        }
+    }
+
+    // close the tour back to city 0
+    int ans = INF;
+    int full = N - 1;
+    for (int u = 1; u < n; u++) {
+        if (dp[full][u] != INF && cost[u][0] != INF)
+            ans = min(ans, dp[full][u] + cost[u][0]);
+    }
+    return ans;
+}
+
+int main() {
+    if (scanf("%d", &n) != 1) return 0;
+
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            int x;
+            scanf("%d", &x);
+            cost[i][j] = (x == -1) ? INF : x;
+        }
+    }
+
+    // diagonal should be 0 (or INF, but 0 is safer)
+    for (int i = 0; i < n; i++)
+        cost[i][i] = 0;
+
+    int answer = tsp();
+    if (answer >= INF)
+        printf("-1\n");          // no tour exists
+    else
+        printf("%d\n", answer);
+
+    return 0;
+}
